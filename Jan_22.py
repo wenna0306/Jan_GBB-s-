@@ -8,6 +8,7 @@ from matplotlib.backends.backend_agg import RendererAgg
 matplotlib.use('agg')
 from st_btn_select import st_btn_select
 import streamlit_authenticator as stauth
+from wordcloud import WordCloud
 _lock = RendererAgg.lock
 
 # -----------------------------------------set page layout-------------------------------------------------------------
@@ -272,6 +273,10 @@ if authentication_status:
             linewidth_xy_axis = 1
             linecolor_xy_axis = '#59656d'
 
+            # linechart
+            linecolor = '#96ae8d'
+            linewidth = 2
+
         # -----------------------------------------Outstanding Fault--------------------------------------------------------
         st.markdown('##')
         st.markdown("""<hr style="height:5px;border:none;color:#333;background-color:#333;" /> """, unsafe_allow_html=True)
@@ -315,19 +320,14 @@ if authentication_status:
         y_daily = df_daily['Reported_Date'].dt.day.value_counts().sort_index().values
         y_mean = df_daily['Reported_Date'].dt.day.value_counts().sort_index().mean()
 
-        fig_daily = go.Figure(
-            data=go.Scatter(x=x_daily, y=y_daily, mode='lines+markers+text', line=dict(color='#116a8c', width=3),
-                            text=y_daily, textfont=dict(family='sana serif', size=14, color='#c4fff7'),
-                            textposition='top center'))
-        fig_daily.add_hline(y=y_mean, line_dash='dot', line_color='#96ae8d', line_width=2, annotation_text='Average Line',
-                            annotation_position='bottom right', annotation_font_size=18, annotation_font_color='green')
-        fig_daily.update_xaxes(title_text='Date', tickangle=-45, title_font_color=titlefontcolor, tickmode='linear',
-                               range=[1, 31],
-                               showgrid=False, gridwidth=gridwidth, gridcolor=gridcolor, showline=True,
-                               linewidth=linewidth_xy_axis, linecolor=linecolor_xy_axis)
+        fig_daily = go.Figure(data=go.Scatter(x=x_daily, y=y_daily, mode='lines+markers+text', line=dict(color='#116a8c', width=3),
+                                              text=y_daily, textfont=dict(family='sana serif', size=14, color='#c4fff7'), textposition='top center'))
+        fig_daily.add_hline(y=y_mean, line_dash='dot', line_color=linecolor, line_width=linewidth, annotation_text='Average Line',
+                                  annotation_position='bottom right', annotation_font_size=18, annotation_font_color='green')
+        fig_daily.update_xaxes(title_text='Date', tickangle=-45, title_font_color=titlefontcolor, tickmode='linear', range=[1, 31],
+                                           showgrid=False, gridwidth=gridwidth, gridcolor=gridcolor, showline=True, linewidth=linewidth_xy_axis, linecolor=linecolor_xy_axis, zeroline=False)
         fig_daily.update_yaxes(title_text='Number of Fault', title_font_color=titlefontcolor, showgrid=False,
-                               gridwidth=gridwidth, gridcolor=gridcolor, showline=True, linewidth=linewidth_xy_axis,
-                               linecolor=linecolor_xy_axis)
+                               gridwidth=gridwidth, gridcolor=gridcolor, showline=True, linewidth=linewidth_xy_axis, zeroline=False)
         fig_daily.update_layout(title='Number of Fault vs Date', plot_bgcolor=plot_bgcolor)
         st.plotly_chart(fig_daily, use_container_width=True)
 
@@ -847,7 +847,21 @@ if authentication_status:
             fig24.update_layout(title='Total Time Spent(hrs) vs Building Floor& Room-Top 10', plot_bgcolor=plot_bgcolor)
             st.plotly_chart(fig24, use_container_width=True)
 
+#------------------------------------Wordcloud Action Taken---------------------------------------
 
+        st.markdown('##')
+        st.markdown('##')
+        wc, fig_empty = st.columns(2)
+
+        with wc, _lock:
+            st.markdown('**Action Taken**')
+            stopwords = ['done', 'Done','Checked', 'check', 'Repaired', 'fixed', 'Fixed', 'Found', 'found', 'from', 'have',
+                         'in', 'on', 'at', 'make', 'it', 'the', 'and', 'to', 'for', 'need', 'NORMAL', 'normal', 'not', 'of', 'with', 
+                         'No', 'NO', 'no', 'site', 'Site', 'up', 'now', 'Now']
+            wc = WordCloud(background_color='#0e1117', stopwords= stopwords, colormap='Set2', width = 1920, height = 1200).generate(str(df2['Action(s)_Taken'].values))
+            st.image(wc.to_array(), width=650)
+        with fig_empty, _lock:
+            st.empty()
 
 
 
@@ -1195,7 +1209,7 @@ if authentication_status:
             <div class="card">
               <div class="card-body" style="border-radius: 10px 10px 0px 0px; background:#ff4f00; padding-top: 5px; width: 600px;
                height: 50px;">
-                <h3 class="card-title" style="background-color:#ff4f00; color:#eabd1d; font-family:Georgia; text-align: center; padding: 0px 0;">Inventory Movement Morning-EC11</h3>
+                <h3 class="card-title" style="background-color:#ff4f00; color:#eabd1d; font-family:Georgia; text-align: center; padding: 0px 0;">Inventory Movement Morning-ALK</h3>
               </div>
             </div>
             """
@@ -1215,31 +1229,33 @@ if authentication_status:
         st.markdown(html_card_subheader_inventoriesEC11, unsafe_allow_html=True)
         st.markdown('##')
 
-        trans_cols =['Description', 'Category', 'Subcategory', 'Ref. ID', 'Reference Location', 'Quantity', 'Request to draw or add',
+        trans_cols =['Description', 'Category', 'Subcategory', 'Ref. ID', 'Reference Location', 'Type', 'Quantity', 'Request to draw or add',
                'Reference number', 'Created by', 'Created date']
         date=['Created date']
 
         df_EC11_t = pd.read_excel('Transaction 2022-02-18 083752.xlsx', header=1, usecols=trans_cols, parse_dates=date)
         df_EC11_t['Created day'] = df_EC11_t['Created date'].dt.day
         df_EC11_t['Reference number'] = df_EC11_t['Reference number'].astype(str)
+        df_EC11_t['Ref. ID'] = df_EC11_t['Ref. ID'].astype(str)
 
-        ser_EC11_daily = df_EC11_t.groupby(by=['Created day'])['Request to draw or add'].sum()
-        ser_EC11_fast = df_EC11_t.groupby(by=['Description'])['Request to draw or add'].sum().sort_values(ascending=False).head(10)
+        df_EC11_t_draw = df_EC11_t[df_EC11_t['Type'] == 'Withdraw']
+        ser_EC11_daily_draw = df_EC11_t_draw.groupby(by=['Created day'])['Request to draw or add'].sum()
+        ser_EC11_fast_draw = df_EC11_t_draw.groupby(by=['Description'])['Request to draw or add'].sum().sort_values(ascending=False).head(10)
 
-        xinventories_fast = ser_EC11_fast.sort_values(ascending=True).index
+        inventorylist = ser_EC11_fast_draw.sort_values(ascending=True).index
 
-        df_EC11_fast_location = df_EC11_t.loc[(df_EC11_t['Description'].isin(xinventories_fast)), ['Description', 'Request to draw or add', 
+        df_EC11_fast_drawinfo = df_EC11_t_draw.loc[(df_EC11_t_draw['Description'].isin(inventorylist)), ['Description', 'Request to draw or add', 
                                  'Reference Location', 'Reference number', 'Ref. ID', 'Created by']].sort_values(by=['Request to draw or add', 'Description'], ascending=False)
 
         balance_cols = ['Description', 'Category', 'Subcategory', 'Ref. ID', 'Expired Date', 'Quantity', 'Location']
         df_EC11_balance = pd.read_excel('Inventories 2022-02-18 085541.xlsx', header=1, usecols=balance_cols)
 
         total_inventory_balanceEC11 = df_EC11_balance['Quantity'].sum()
-        total_inventory_drawedEC11 = df_EC11_t['Request to draw or add'].sum()
-        total_replenishmentEC11 = 0
+        total_inventory_drawedEC11 = df_EC11_t[df_EC11_t.Type=='Withdraw']['Request to draw or add'].sum()
+        total_replenishmentEC11 = df_EC11_t[df_EC11_t.Type=='Add Quantity']['Request to draw or add'].sum()
+        total_transaction = df_EC11_t['Description'].count()
 
-
-        column01_inventory, column02_inventory, column03_inventory = st.columns(3)
+        column01_inventory, column02_inventory, column03_inventory, column04_inventory= st.columns(4)
 
         with column01_inventory, _lock:
             st.markdown('**Balance**')
@@ -1250,47 +1266,48 @@ if authentication_status:
         with column03_inventory, _lock:
             st.markdown('**Replenishment**')
             st.markdown(f"<h2 style='text-align: left; color: #d0c101;'>{total_replenishmentEC11}</h2>", unsafe_allow_html=True)
+        with column04_inventory, _lock:
+            st.markdown('**Transaction**')
+            st.markdown(f"<h2 style='text-align: left; color: #d0c101;'>{total_transaction}</h2>", unsafe_allow_html=True)
+
+        # xinventories_daily = ser_EC11_daily_draw.index
+        # yinventories_daily = ser_EC11_daily_draw.values
+        # yinventories_mean = ser_EC11_daily_draw.values.mean()
+
+        # figinventories_daily = go.Figure(data=go.Scatter(x=xinventories_daily, y=yinventories_daily, mode='lines+markers+text', line=dict(color='#13bbaf', width=3),
+        #                         text=yinventories_daily, textfont=dict(family='sana serif', size=14, color='#c4fff7'), textposition='top center'))
+        # figinventories_daily.add_hline(y=yinventories_mean, line_dash='dot', line_color='#96ae8d', line_width=2, annotation_text='Average Line',
+        #                         annotation_position='bottom right', annotation_font_size=18, annotation_font_color='green')
+        # figinventories_daily.update_xaxes(title_text='Date', tickangle=-45, title_font_color='#74a662', tickmode='linear',
+        #                             range=[1, 31], showgrid=False, showline=True, linewidth=1, linecolor='#59656d')
+        # figinventories_daily.update_yaxes(title_text='Number of Inventory', title_font_color='#74a662', showgrid=False,
+        #                             gridwidth=0.1, gridcolor='#1f3b4d', showline=True, linewidth=1, linecolor='#59656d')
+        # figinventories_daily.update_layout(title='Daily Movement', plot_bgcolor='rgba(0, 0, 0, 0)',
+        #                             # xaxis=dict(showticklabels=True, ticks='outside', tickfont=dict(family='Arial', size=12, color='rgb(82, 82, 82)')),
+        #                             # yaxis=dict(showticklabels=True, ticks='outside', tickfont=dict(family='Arial', size=12, color='rgb(82, 82, 82)'))
+        #                             )
+        # st.plotly_chart(figinventories_daily, use_container_width=True)
 
 
-        xinventories_daily = ser_EC11_daily.index
-        yinventories_daily = ser_EC11_daily.values
-        yinventories_mean = ser_EC11_daily.values.mean()
 
-        figinventories_daily = go.Figure(data=go.Scatter(x=xinventories_daily, y=yinventories_daily, mode='lines+markers+text', line=dict(color='#13bbaf', width=3),
-                                text=yinventories_daily, textfont=dict(family='sana serif', size=14, color='#c4fff7'), textposition='top center'))
-        figinventories_daily.add_hline(y=yinventories_mean, line_dash='dot', line_color='#96ae8d', line_width=2, annotation_text='Average Line',
-                                annotation_position='bottom right', annotation_font_size=18, annotation_font_color='green')
-        figinventories_daily.update_xaxes(title_text='Date', tickangle=-45, title_font_color='#74a662', tickmode='linear',
-                                    range=[1, 31], showgrid=False, showline=True, linewidth=1, linecolor='#59656d')
-        figinventories_daily.update_yaxes(title_text='Number of Inventory', title_font_color='#74a662', tickmode='linear', showgrid=False,
-                                    gridwidth=0.1, gridcolor='#1f3b4d', showline=True, linewidth=1, linecolor='#59656d')
-        figinventories_daily.update_layout(title='Daily Movement', plot_bgcolor='rgba(0, 0, 0, 0)',
-                                    # xaxis=dict(showticklabels=True, ticks='outside', tickfont=dict(family='Arial', size=12, color='rgb(82, 82, 82)')),
-                                    # yaxis=dict(showticklabels=True, ticks='outside', tickfont=dict(family='Arial', size=12, color='rgb(82, 82, 82)'))
-                                    )
-        st.plotly_chart(figinventories_daily, use_container_width=True)
+        xinventories_fast = ser_EC11_fast_draw.sort_values(ascending=True).index
+        yinventories_fast = ser_EC11_fast_draw.sort_values(ascending=True).values
 
 
+        figinventories_fast = go.Figure(data=[go.Bar(x=yinventories_fast, y=xinventories_fast, text=yinventories_fast,
+                                                        orientation='h', textfont=dict(family='sana serif', size=14, color='#c4fff7'),
+                                                    textposition='auto', textangle=0)
+                                            ])
+        figinventories_fast.update_xaxes(title_text="Number of Inventory", tickangle=-45, title_font_color='#087871', showgrid=True,
+                                            gridwidth=0.1, gridcolor='#1f3b4d', showline=True, linewidth=1, linecolor='#59656d')
+        figinventories_fast.update_yaxes(title_text='Description', title_font_color='#087871', showgrid=False, gridwidth=0.1,
+                            gridcolor='#1f3b4d', showline=True, linewidth=1, linecolor='#59656d')
+        figinventories_fast.update_traces(marker_color='#087871', marker_line_color='#087871', marker_line_width=1)
+        figinventories_fast.update_layout(title='Fast Moving Inventories-Top 10', plot_bgcolor='rgba(0,0,0,0)')
+        st.plotly_chart(figinventories_fast, use_container_width=True)
 
-        figinventories_fast, dataframeinventory = st.columns(2)
-        xinventories_fast = ser_EC11_fast.sort_values(ascending=True).index
-        yinventories_fast = ser_EC11_fast.sort_values(ascending=True).values
-
-        with figinventories_fast, _lock:
-            figinventories_fast = go.Figure(data=[go.Bar(x=yinventories_fast, y=xinventories_fast, text=yinventories_fast,
-                                                         orientation='h', textfont=dict(family='sana serif', size=14, color='#c4fff7'),
-                                                        textposition='outside', textangle=0)
-                                                ])
-            figinventories_fast.update_xaxes(title_text="Number of Inventory", tickangle=-45, title_font_color='#087871', showgrid=True,
-                                             gridwidth=0.1, gridcolor='#1f3b4d', showline=True, linewidth=1, linecolor='#59656d')
-            figinventories_fast.update_yaxes(title_text='Description', title_font_color='#087871', showgrid=False, gridwidth=0.1,
-                                gridcolor='#1f3b4d', showline=True, linewidth=1, linecolor='#59656d')
-            figinventories_fast.update_traces(marker_color='#087871', marker_line_color='#087871', marker_line_width=1)
-            figinventories_fast.update_layout(title='Fast Moving Inventories-Top 10', plot_bgcolor='rgba(0,0,0,0)')
-            st.plotly_chart(figinventories_fast, use_container_width=True)
-        with dataframeinventory, _lock:
-            st.subheader('Fast Moving Inventories-Top 10 info')
-            st.dataframe(df_EC11_fast_location, height=300)
+        st.markdown('**Fast Moving Inventories-Top 10 info**')
+        st.dataframe(df_EC11_fast_drawinfo, height=300)
 
 
 
