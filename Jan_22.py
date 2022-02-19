@@ -11,22 +11,18 @@ import streamlit_authenticator as stauth
 from wordcloud import WordCloud
 _lock = RendererAgg.lock
 
+
+
 # -----------------------------------------set page layout-------------------------------------------------------------
 st.set_page_config(page_title='iSMM Dashboard',
-                   page_icon = ':chart_with_upwards_trend:',
-                   layout='wide',
-                   initial_sidebar_state='collapsed')
-
-
-page = st_btn_select(('Faults', 'Schedules', 'Inventories'),
-                     nav=True,
-                     format_func=lambda name: name.capitalize(),
-                     )
+                    page_icon = ':chart_with_upwards_trend:',
+                    layout='wide',
+                    initial_sidebar_state='collapsed')
 
 #-----------------------------------------------User Authentication-----------------------------------------------
-names = ['wenna', 'Lifei', 'Thiru', 'Mr.Loh']
-usernames = ['wenna0306@gmail.com', 'Lifei', 'Thiru', 'booninn.loh@surbanajurong.com']
-passwords = ['password', 'password', 'password', 'password']
+names = ['wenna', 'Mr.Loh']
+usernames = ['wenna0306@gmail.com', 'booninn.loh@surbanajurong.com']
+passwords = ['password', 'password']
 
 hashed_passwords = stauth.hasher(passwords).generate()
 
@@ -37,6 +33,15 @@ name, authentication_status = authenticator.login('Login','main')
 
 if authentication_status:
     st.write('Welcome *%s*' % (name))
+
+
+#-----------------------------------------------different pages setup-----------------------------------------------
+
+    page = st_btn_select(('Faults', 'Schedules', 'Inventories'),
+                        nav=True,
+                        format_func=lambda name: name.capitalize(),
+                        )
+
 
 # =============================================Fault================================================
     if page =='Faults':
