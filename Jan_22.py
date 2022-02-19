@@ -1245,7 +1245,7 @@ if authentication_status:
         inventorylist = ser_EC11_fast_draw.sort_values(ascending=True).index
 
         df_EC11_fast_drawinfo = df_EC11_t_draw.loc[(df_EC11_t_draw['Description'].isin(inventorylist)), ['Description', 'Request to draw or add', 
-                                 'Reference Location', 'Reference number', 'Ref. ID', 'Created by']].sort_values(by=['Request to draw or add', 'Description'], ascending=False)
+                                 'Reference Location', 'Reference number', 'Ref. ID', 'Created by', 'Created date']].sort_values(by=['Request to draw or add', 'Description'], ascending=False)
 
         balance_cols = ['Description', 'Category', 'Subcategory', 'Ref. ID', 'Expired Date', 'Quantity', 'Location']
         df_EC11_balance = pd.read_excel('Inventories 2022-02-18 085541.xlsx', header=1, usecols=balance_cols)
