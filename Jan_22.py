@@ -24,7 +24,7 @@ page = st_btn_select(('Faults', 'Schedules', 'Inventories'),
                      )
 
 #-----------------------------------------------User Authentication-----------------------------------------------
-names = ['wenna', 'Lifei', 'Thiru']
+names = ['wenna', 'Lifei', 'Thiru', 'Mr.Loh']
 usernames = ['wenna0306@gmail.com', 'Lifei', 'Thiru', 'booninn.loh@surbanajurong.com']
 passwords = ['password', 'password', 'password', 'password']
 
